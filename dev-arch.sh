@@ -2,9 +2,9 @@
 #!/bin/bash
 PROJECT_NAME=$1
 shift
-load_config
 GIT=false
 TYPE=""
+TAILWIND=false
 
 create_python_project(){
 	mkdir src tests
@@ -26,7 +26,7 @@ create_react_project(){
 		exit 1
 	fi
 	echo "Scaffolding React + Vite project..."
-	npm create vite@latest temp_vite_scaffold -- --template react
+	npx --yes create-vite temp_vite_scaffold -- --template react
 	if [ $? -ne 0 ]; then
 		echo "Error: Vite scaffolding failed."
 		exit 1
@@ -62,6 +62,15 @@ create_gitignore(){
 	esac
 }
 
+setup_tailwind(){
+	echo "Installing Tailwind CSS..."
+	npm install tailwindcss @tailwindcss/vite
+	sed -i "1s|^|import tailwindcss from '@tailwindcss/vite'\n|" vite.config.js
+	sed -i "s|react()|react(),\n tailwindcss(),|" vite.config.js
+	echo "@import 'tailwindcss';" > src/index.css
+	echo "Tailwind CSS configured."
+}
+
 load_config(){
 	DEFAULT_TYPE=""
 	DEFAULT_GIT=false
@@ -94,6 +103,10 @@ while [[ $# -gt 0 ]]; do
                 ;;
 	-g)
 		GIT=true
+		shift
+		;;
+	-tw)
+		TAILWIND=true
 		shift
 		;;
         *)
@@ -144,6 +157,16 @@ react)
         echo "Error: Unknown project type"
         exit 1
 esac
+
+if [ "$TAILWIND" = true ] && [ "$TYPE" != "react" ]; then
+	echo "Error: -tw flag is only supported with -t react for now."
+	rmdir "../$PROJECT_NAME"
+	exit 1
+fi
+
+if [ "$TAILWIND" = true ]; then
+	setup_tailwind
+fi
 
 if [ "$GIT" = true ]; then
         echo "Initializing Git repository..."
