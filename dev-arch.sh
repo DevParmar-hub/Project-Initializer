@@ -2,6 +2,31 @@
 #!/bin/bash
 PROJECT_NAME=$1
 shift
+
+if [ "$PROJECT_NAME" = "--init-config" ]; then
+        if [ -f "$HOME/.devarchrc" ]; then
+                echo "Config already exists at ~/.devarchrc — not overwriting."
+                exit 0
+        fi
+        cat > "$HOME/.devarchrc" << 'EOF'
+# dev-arch configuration file
+# Uncomment and change any values you want
+
+# default_type=python
+# default_type=web
+# default_type=react
+
+# default_git=false
+# default_git=true
+
+# default_tailwind=false
+# default_tailwind=true
+EOF
+        echo "Config created at ~/.devarchrc"
+        echo "Open it with: nano ~/.devarchrc"
+        exit 0
+fi
+
 GIT=false
 TYPE=""
 TAILWIND=false
@@ -74,6 +99,7 @@ setup_tailwind(){
 load_config(){
 	DEFAULT_TYPE=""
 	DEFAULT_GIT=false
+	DEFAULT_TAILWIND=false
 
 	local config_file="$HOME/.devarchrc"
 	if [ ! -f "$config_file" ]; then 
@@ -88,6 +114,7 @@ load_config(){
 	   	case "$key" in
 			default_type) DEFAULT_TYPE="$value" ;;
 			default_git)  DEFAULT_GIT="$value"  ;;
+			default_tailwind) DEFAULT_TAILWIND="$value" ;;
 		esac
 	done <"$config_file"
 }
@@ -95,6 +122,7 @@ load_config(){
 load_config
 GIT=$DEFAULT_GIT
 TYPE=$DEFAULT_TYPE
+TAILWIND=$DEFAULT_TAILWIND
 while [[ $# -gt 0 ]]; do
         case $1 in
         -t)
