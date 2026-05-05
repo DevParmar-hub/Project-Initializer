@@ -27,6 +27,25 @@ EOF
         exit 0
 fi
 
+
+if [ "$PROJECT_NAME" = "--help" ]; then
+	echo "Usage: dev-arch <project_name> -t <type> [options]"
+	echo ""
+	echo "Project types:"
+	echo " -t python	Create a Python project"
+	echo " -t web		Create a web project"
+	echo " -t react 	Create a React + Vite project"
+	echo ""
+	echo " Options:"
+	echo " -g 	Initialize a Git repository"
+	echo " -tw 	Add Tailwind CSS (react only)"
+	echo ""
+	echo " Config:"
+	echo " --init-config 	Generate a starter ~/.devarchrc config file"
+	echo " --help 		Show this help message"
+	exit 0
+fi
+
 GIT=false
 TYPE=""
 TAILWIND=false
