@@ -37,8 +37,10 @@ if [ "$PROJECT_NAME" = "--help" ]; then
 	echo " -t react 	Create a React + Vite project"
 	echo ""
 	echo " Options:"
-	echo " -g 	Initialize a Git repository"
-	echo " -tw 	Add Tailwind CSS (react only)"
+	echo " -g 		Initialize a Git repository"
+	echo " -G		Create a GitHub repository and push"
+	echo " --private	Make a GitHub repository private"
+	echo " -tw 		Add Tailwind CSS (react only)"
 	echo ""
 	echo " Config:"
 	echo " --init-config 	Generate a starter ~/.devarchrc config file"
@@ -49,6 +51,8 @@ fi
 GIT=false
 TYPE=""
 TAILWIND=false
+GITHUB=false
+VISIBILITY="public"
 
 create_python_project(){
 	mkdir src tests
@@ -115,10 +119,41 @@ setup_tailwind(){
 	echo "Tailwind CSS configured."
 }
 
-load_config(){
+setup_github(){
+	if ! command -v gh &>/dev/null; then
+		echo "Error: Github CLI is not installed. Get it from https://cli.github.com"
+		exit 1
+	fi
+
+	if ! gh auth status &>/dev/null; then 
+		echo "Error: Not logged in to Github CLI."
+		echo "Run: gh auth login"
+		exit 1
+	fi
+
+echo "Creating GitHub repository..."
+gh repo create "$PROJECT_NAME" \
+	--source=. \
+	--remote=origin \
+	--push \
+	"--$VISIBILITY"
+
+	if [ $? -ne 0 ]; then
+		echo "Error: GitHub rep creation failed."
+		exit 1
+	fi
+
+echo "Repository created: https://github.com/$(gh api user -q .login)/$PROJECT_NAME"
+
+
+}
+
+	load_config(){
 	DEFAULT_TYPE=""
 	DEFAULT_GIT=false
 	DEFAULT_TAILWIND=false
+	DEFAULT_GITHUB=false
+	DEFAULT_VISIBILITY="public"
 
 	local config_file="$HOME/.devarchrc"
 	if [ ! -f "$config_file" ]; then 
@@ -154,6 +189,15 @@ while [[ $# -gt 0 ]]; do
 		;;
 	-tw)
 		TAILWIND=true
+		shift
+		;;
+	-G)
+		GITHUB=true
+		GIT=true
+		shift
+		;;
+	--private)
+		VISIBILITY="private"
 		shift
 		;;
         *)
@@ -219,6 +263,12 @@ if [ "$GIT" = true ]; then
         echo "Initializing Git repository..."
         git init
         create_gitignore
+	git add .
+	git commit -m "Initial commit"
+fi
+
+if [ "$GITHUB" = true ]; then
+	setup_github
 fi
 
 echo "Project created successfull"
