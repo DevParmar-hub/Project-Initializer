@@ -81,15 +81,11 @@ create_react_project(){
 		exit 1
 	fi
 	echo "Scaffolding React + Vite project..."
-	npx --yes create-vite temp_vite_scaffold --template react
+	npx create-vite .
 	if [ $? -ne 0 ]; then
 		echo "Error: Vite scaffolding failed."
 		exit 1
 	fi
-
-	cp -r temp_vite_scaffold/. .
-	rm -rf temp_vite_scaffold
-	echo "Installing dependencies..."
 	npm install
 }
 
@@ -111,6 +107,12 @@ create_gitignore(){
 		echo ".env" >> .gitignore
 		echo ".env.local" >> .gitignore
 		;;
+	node)
+		printf "node_modules/\n.env\ndist/\nuploads/*\n!uploads/.gitkeep\n" > .gitignore
+		;;
+	fullstack)
+		printf "node_modules/\n.env\ndist/\nuploads/*\n!uploads/.gitkeep\n" > .gitignore
+		;;
 	*)
 		touch .gitignore
 		;;
@@ -119,10 +121,16 @@ create_gitignore(){
 
 setup_tailwind(){
 	echo "Installing Tailwind CSS..."
+	if [ "$TYPE" = "fullstack" ]; then
+		cd frontend
+	fi
 	npm install tailwindcss @tailwindcss/vite
 	sed -i "1s|^|import tailwindcss from '@tailwindcss/vite'\n|" vite.config.js
 	sed -i "s|react()|react(),\n tailwindcss(),|" vite.config.js
 	echo "@import 'tailwindcss';" > src/index.css
+	if [ "$TYPE" = "fullstack" ]; then
+		cd ..
+	fi
 	echo "Tailwind CSS configured."
 }
 
@@ -161,7 +169,7 @@ create_node_project(){
 
 	cat > package.json << 'EOF'
 {
-	  "name": "node-project",
+	"name": "node-project",
   	"version": "1.0.0",
   	"type": "module",
   	"scripts": {
@@ -284,9 +292,7 @@ create_fullstack_project(){
 	cd frontend
 	export NVM_DIR="$HOME/.nvm"
 	[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-	npx --yes create-vite temp_vite_scaffold --template react
-	cp -r temp_vite_scaffold/. .
-	rm -rf temp_vite_scaffold
+	npx create-vite .
 	npm install
 	cd ..
 
@@ -295,7 +301,7 @@ create_fullstack_project(){
 	cd ..
 }
 
-	load_config(){
+load_config(){
 	DEFAULT_TYPE=""
 	DEFAULT_GIT=false
 	DEFAULT_TAILWIND=false
@@ -414,7 +420,7 @@ fullstack)
         exit 1
 esac
 
-if [ "$TAILWIND" = true ] && [ "$TYPE" != "react" ]; then
+if [ "$TAILWIND" = true ] && [ "$TYPE" != "react" ] && [ "$TYPE" != "fullstack" ]; then
 	echo "Error: -tw flag is only supported with -t react for now."
 	rmdir "../$PROJECT_NAME"
 	exit 1
@@ -436,11 +442,19 @@ if [ "$GITHUB" = true ]; then
 	setup_github
 fi
 
-echo "Project created successfull"
+echo "Project '$PROJECT_NAME' created successfully."
 
-if [ "$TYPE" = "react" ]; then
+if [ "$TYPE" = "react" ] || [ "$TYPE" = "fullstack" ]; then
 	echo ""
 	echo "Next steps:"
 	echo "cd $PROJECT_NAME"
 	echo "npm run dev"
+fi
+
+if [ "$TYPE" = "node" ]; then
+	echo ""
+	echo "Next steps:"
+	echo " cd $PROJECT_NAME"
+	echo " npm install"
+	echo " npm run dev"
 fi
